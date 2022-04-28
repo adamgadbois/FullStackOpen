@@ -1,55 +1,8 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
-
-const Persons = ({ persons }) => {
-  return (
-    <div>
-      <ul>
-        {persons.map(person =>
-          <Person key={person.name} person={person} />
-        )}
-      </ul>
-    </div>
-  )
-}
-
-const Person = ({ person }) => {
-  return (
-    <li>{person.name} {person.number}</li>
-  )
-}
-
-const Filter = ({search,handleSearchChange}) => {
-  return(
-    <div>
-      <h2>Search</h2>
-      <input
-        value={search}
-        onChange={handleSearchChange}
-      />
-    </div>
-  )
-}
-
-const PersonForm = ({addPerson,newName,handleNameChange,newNumber,handleNumberChange}) => {
-  return(
-    <form onSubmit={addPerson}>
-      <div>
-        name: <input
-          value={newName}
-          onChange={handleNameChange}
-        />
-        number: <input
-          value={newNumber}
-          onChange={handleNumberChange}
-        />
-      </div>
-      <div>
-        <button type="submit">add</button>
-      </div>
-    </form>
-  )
-}
+import numbersService from './services/numbers'
+import Persons from './components/Persons'
+import PersonForm from './components/PersonForm'
+import Filter from './components/Filter'
 
 const App = () => {
   const [persons, setPersons] = useState([])
@@ -58,22 +11,41 @@ const App = () => {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        setPersons(response.data)
-      })
+    numbersService.getAll().then(returnedNumbers => setPersons(returnedNumbers))
   }, [])
+
+  const deletePerson = (id) => {
+    numbersService.remove(id)
+    setPersons(persons.filter(person => person.id !== id))
+  }
 
   const addPerson = (event) => {
     event.preventDefault()
-    const personObject = {
-      name: newName,
-      number: newNumber
+
+    const index = persons.findIndex(person => RegExp(newName,"i").test(person.name))
+    if(index > -1){
+      if(window.confirm(`${newName} is already added to the phonebook, replace the old number with a new one?`)){
+        const arrayCopy = persons
+        arrayCopy[index].number = newNumber
+        setPersons(arrayCopy)
+
+        const person = arrayCopy[index]
+        numbersService.update(person.id,person)
+      }
+    } else{
+      const personObject = {
+        name: newName,
+        number: newNumber
+      }
+      numbersService
+        .create(personObject)
+        .then(response => {
+          setPersons(persons.concat(response))
+        })
+        .catch(error => {
+          console.log('person not created')
+        })
     }
-    persons.some(person => person.name.toUpperCase() === newName.toUpperCase())
-      ? alert(`${newName} is already added to the phonebook`)
-      : setPersons(persons.concat(personObject))
     setNewName('')
     setNewNumber('')
   }
@@ -105,7 +77,7 @@ const App = () => {
         handleNumberChange = {handleNumberChange}
       />
       <h3>Numbers</h3>
-      <Persons persons={filterPersons()} />
+      <Persons persons={filterPersons()} deletePerson={deletePerson} />
     </div>
   )
 }
