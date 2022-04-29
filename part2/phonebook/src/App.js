@@ -20,7 +20,7 @@ const App = () => {
     numbersService
       .remove(person.id)
       .catch(error =>{
-        setNotification({error:true,message:`${person.name} has already been removed`})
+        setNotification({error:true,message:`Information of ${person.name} has already been removed from server`})
       })
     setPersons(persons.filter(p => p.id !== person.id))
   }
