@@ -10,17 +10,24 @@ const App = () => {
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [search, setSearch] = useState('')
-  const [notification, setNotification] = useState({error:false,message:''})
+  const [notification, setNotification] = useState(null)
 
   useEffect(() => {
     numbersService.getAll().then(returnedNumbers => setPersons(returnedNumbers))
   }, [])
 
+  const handleNotification = (error,message) => {
+    setNotification({error:error,message:message})
+    setTimeout(() => {
+      setNotification(null)
+    }, 3000)
+  }
+
   const deletePerson = (person) => {
     numbersService
       .remove(person.id)
       .catch(error =>{
-        setNotification({error:true,message:`Information of ${person.name} has already been removed from server`})
+        handleNotification(true,`Information of ${person.name} has already been removed from server`)
       })
     setPersons(persons.filter(p => p.id !== person.id))
   }
@@ -35,10 +42,10 @@ const App = () => {
           .update(person.id,{...person,number:newNumber})
           .then(response => {
             setPersons(persons.map(p => p.id !== person.id ? p : response))
-            setNotification({error:false,message:`Edited ${newName}`})
+            handleNotification(false,`Edited ${newName}`)
           })
           .catch(error => {
-            setNotification({error:true,message:`Could not edit ${newName}`})
+            handleNotification(true,`Could not edit ${newName}`)
           })
       }
     } else{
@@ -50,10 +57,10 @@ const App = () => {
         .create(personObject)
         .then(response => {
           setPersons(persons.concat(response))
-          setNotification({error:false,message:`Added ${newName}`})
+          handleNotification(false,`Added ${newName}`)
         })
         .catch(error => {
-          setNotification({error:true,message:`Could not add ${newName}`})
+          handleNotification(true,`Could not add ${newName}`)
         })
     }
     setNewName('')

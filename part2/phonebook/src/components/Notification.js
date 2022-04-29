@@ -1,9 +1,9 @@
 const Notification = ({notification}) => {
-    const error = notification.error
-    const message = notification.message
-    if (message === ''){
+    if (!notification){
         return null
     }
+    const error = notification.error
+    const message = notification.message
     const errorStyle = {
         color: 'red',
         background: 'lightgrey',
@@ -23,7 +23,7 @@ const Notification = ({notification}) => {
         padding: 10,
         marginBottom: 10
     }
-    
+
     return (
         <div style={error ? errorStyle : successStyle}>
             {message}
