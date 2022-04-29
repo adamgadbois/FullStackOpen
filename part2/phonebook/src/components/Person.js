@@ -1,9 +1,9 @@
 const Person = ({ person, deletePerson}) => {
     const handleClick = (event) => {
       if (window.confirm(`Delete ${person.name}`)){
-        deletePerson(person.id)
+        deletePerson(person)
       } else{
-        console.log("cancelled")
+        console.log("Cancelled Deletion")
       }
     }
     return (

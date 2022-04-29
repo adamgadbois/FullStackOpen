@@ -3,34 +3,43 @@ import numbersService from './services/numbers'
 import Persons from './components/Persons'
 import PersonForm from './components/PersonForm'
 import Filter from './components/Filter'
+import Notification from './components/Notification'
 
 const App = () => {
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [search, setSearch] = useState('')
+  const [notification, setNotification] = useState({error:false,message:''})
 
   useEffect(() => {
     numbersService.getAll().then(returnedNumbers => setPersons(returnedNumbers))
   }, [])
 
-  const deletePerson = (id) => {
-    numbersService.remove(id)
-    setPersons(persons.filter(person => person.id !== id))
+  const deletePerson = (person) => {
+    numbersService
+      .remove(person.id)
+      .catch(error =>{
+        setNotification({error:true,message:`${person.name} has already been removed`})
+      })
+    setPersons(persons.filter(p => p.id !== person.id))
   }
 
   const addPerson = (event) => {
     event.preventDefault()
 
-    const index = persons.findIndex(person => RegExp(newName,"i").test(person.name))
-    if(index > -1){
+    const person = persons.find(person => newName.toLowerCase() === person.name.toLowerCase())
+    if(person){
       if(window.confirm(`${newName} is already added to the phonebook, replace the old number with a new one?`)){
-        const arrayCopy = persons
-        arrayCopy[index].number = newNumber
-        setPersons(arrayCopy)
-
-        const person = arrayCopy[index]
-        numbersService.update(person.id,person)
+        numbersService
+          .update(person.id,{...person,number:newNumber})
+          .then(response => {
+            setPersons(persons.map(p => p.id !== person.id ? p : response))
+            setNotification({error:false,message:`Edited ${newName}`})
+          })
+          .catch(error => {
+            setNotification({error:true,message:`Could not edit ${newName}`})
+          })
       }
     } else{
       const personObject = {
@@ -41,9 +50,10 @@ const App = () => {
         .create(personObject)
         .then(response => {
           setPersons(persons.concat(response))
+          setNotification({error:false,message:`Added ${newName}`})
         })
         .catch(error => {
-          console.log('person not created')
+          setNotification({error:true,message:`Could not add ${newName}`})
         })
     }
     setNewName('')
@@ -62,11 +72,12 @@ const App = () => {
     setSearch(event.target.value)
   }
 
-  const filterPersons = () => persons.filter(person => RegExp(search,"i").test(person.name))
+  const filterPersons = () => persons.filter(person => person.name.toLowerCase().includes(search.toLowerCase()))
   
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification notification={notification}/>
       <Filter search = {search} handleSearchChange = {handleSearchChange} />
       <h3>Add a new</h3>
       <PersonForm 
